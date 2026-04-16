@@ -14,6 +14,27 @@ Added CLI Commands :
 
 PCSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU [Interpreters](<https://en.wikipedia.org/wiki/Interpreter_(computing)>), [Recompilers](https://en.wikipedia.org/wiki/Dynamic_recompilation) and a [Virtual Machine](https://en.wikipedia.org/wiki/Virtual_machine) which manages hardware states and PS2 system memory. This allows you to play PS2 games on your PC, with many additional features and benefits.
 
+## Building (Linux)
+Other platforms has not been tested for this fork, but they should work as well. You can test it yourself and give us a feedback about it.
+### 1. Get Dependencies
+- Arch Linux : `sudo pacman -S --needed base-devel clang lld llvm cmake ninja extra-cmake-modules git ffmpeg kddockwidgets libpcap libwebp qt6-base qt6-tools sdl3 shaderc vulkan-headers alsa-lib libpulse libxi libxrandr glib2-devel`
+
+### 2. Clone the project
+- `git clone https://github.com/TenebrisOS/pcsx2-advanced-cli.git`
+- `cd pcsx2-advanced-cli`
+
+### 3. Build project third-party libraries
+- `.github/workflows/scripts/linux/build-dependencies-qt.sh deps`
+
+### 4. Prepare build with CMake
+- `cmake -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld" -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld" -DCMAKE_PREFIX_PATH="$PWD/deps" -GNinja`
+
+### 5. Execute build
+- `ninja -C build`
+
+### 6. Run the build
+- `build/bin/pcsx2-qt`
+
 ## Project Details
 
 PCSX2 has been in development for more than 20 years. Past versions could only run a few public domain game demos, but newer versions can run most games at full speed, including popular titles such as Final Fantasy X and Devil May Cry 3. Visit the [PCSX2 compatibility list](https://pcsx2.net/compat/) to check the latest compatibility status of games (with more than 2500 titles tested).
@@ -26,14 +47,14 @@ PCSX2 supports Windows, Linux, and Mac platforms. Our [setup documentation page]
 
 Please note that a BIOS dump from a legitimately-owned PS2 console is required to use the emulator. For more information, visit [this page](https://pcsx2.net/docs/setup/bios/).
 
-## Contributing / Building
+## Contributing
 
 PCSX2 supports translation into other languages using [Crowdin](https://crowdin.com/project/pcsx2-emulator).
 
 See the [Contribution Guide](https://pcsx2.net/docs/contributing/) for more info on how to contribute.
 
 ## Donations (fork)
-- If you wish to help supporting my work, consider donating, small funds are always so caring.
+If you wish to help supporting my work, consider donating, small funds are always so caring.
 - Bitcoin : ```bc1qfxg9wg97vklzselnayy0eutk5t9cpy048jmzzf```
 - Ethereum : ```0x859477061053a5a6a72466fee128fbdff21a34ba```
 - Solana : ```UDyMrbQh5LTBXAT3K22jRZCfnLpw4CwztiYcXBtvd4t```
