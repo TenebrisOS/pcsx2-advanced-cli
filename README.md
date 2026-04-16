@@ -1,5 +1,11 @@
 # PCSX2
 
+## Changes from the original repo
+Added CLI Commands :
+- [x] Reset PS2 Virtual Machine `-resetsys`
+- [ ] Change Running Disc `-changedisc <dir>` (dir or real disc)
+- [ ] Load Memory Card `-memory <dir>` (dir or usb? sd card? idk) 
+
 ![Windows Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/windows_build_matrix.yml?label=%F0%9F%96%A5%EF%B8%8F%20Windows%20Builds)
 ![Linux Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/linux_build_matrix.yml?label=%F0%9F%90%A7%20Linux%20Builds)
 ![MacOS Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/macos_build_matrix.yml?label=%F0%9F%8D%8E%20MacOS%20Builds)
@@ -25,3 +31,10 @@ Please note that a BIOS dump from a legitimately-owned PS2 console is required t
 PCSX2 supports translation into other languages using [Crowdin](https://crowdin.com/project/pcsx2-emulator).
 
 See the [Contribution Guide](https://pcsx2.net/docs/contributing/) for more info on how to contribute.
+
+## Donations (fork)
+- If you wish to help supporting my work, consider donating, small funds are always so caring.
+- Bitcoin : ```bc1qfxg9wg97vklzselnayy0eutk5t9cpy048jmzzf```
+- Ethereum : ```0x859477061053a5a6a72466fee128fbdff21a34ba```
+- Solana : ```UDyMrbQh5LTBXAT3K22jRZCfnLpw4CwztiYcXBtvd4t```
+- Verus : ```RWJ67efCytvy2sJewjNQgc4fxjfpWgHUi5```

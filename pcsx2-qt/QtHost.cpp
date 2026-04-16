@@ -12,6 +12,11 @@
 #include "QtUtils.h"
 #include "SetupWizardDialog.h"
 
+#include "pcsx2/PINE.h"  
+#include <sys/socket.h>  
+#include <sys/un.h>  
+#include <unistd.h>
+
 #include "pcsx2/CDVD/CDVDcommon.h"
 #include "pcsx2/Achievements.h"
 #include "pcsx2/BuildVersion.h"
@@ -2077,6 +2082,13 @@ void QtHost::PrintCommandLineVersion()
 	std::fprintf(stderr, "\n");
 }
 
+// void ChangeDisc(const std::optional<std::string>& optional_dir) {
+// 	if (optional_dir)
+// 		VMManager::ChangeDisc(CDVD_SourceType::Iso, *optional_dir);
+// 	else
+// 		VMManager::ChangeDisc(CDVD_SourceType::Disc, {});
+// }
+
 void QtHost::PrintCommandLineHelp(const std::string_view progname)
 {
 	PrintCommandLineVersion();
@@ -2111,6 +2123,11 @@ void QtHost::PrintCommandLineHelp(const std::string_view progname)
 	std::fprintf(stderr, "  --: Signals that no more arguments will follow and the remaining\n"
 						 "    parameters make up the filename. Use when the filename contains\n"
 						 "    spaces or starts with a dash.\n");
+	
+	std::fprintf(stderr, "Added Commands.\n");
+	std::fprintf(stderr, "  -resetsys : Resets the running PS2 system.\n");
+	// std::fprintf(stderr, "  -changedisc <optional_dir> : Changes the running disc. If no dir given, it sets to the physical disc.\n");
+
 	std::fprintf(stderr, "\n");
 }
 
@@ -2120,6 +2137,136 @@ std::shared_ptr<VMBootParameters>& QtHost::AutoBoot(std::shared_ptr<VMBootParame
 		autoboot = std::make_shared<VMBootParameters>();
 
 	return autoboot;
+}
+
+static bool sendPINECommand(int slot, unsigned char command)  
+{  
+#ifdef _WIN32  
+    WSADATA wsa = {};  
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)  
+        return false;  
+  
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);  
+    if (sock == INVALID_SOCKET)  
+    {  
+        WSACleanup();  
+        return false;  
+    }  
+  
+    sockaddr_in server = {};  
+    server.sin_family = AF_INET;  
+    server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
+    server.sin_port = htons(slot);  
+  
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)  
+    {  
+        printf("Failed to connect to PINE server on port %u\n", slot);  
+        closesocket(sock);  
+        WSACleanup();  
+        return false;  
+    }  
+    
+    printf("Connected to PINE server\n");
+  
+    // Build message: [4-byte size] [command byte]
+    u8 buffer[5];
+    u32 size = 1;  // Just the command byte
+    
+    // Little-endian size
+    buffer[0] = size & 0xFF;  
+    buffer[1] = (size >> 8) & 0xFF;  
+    buffer[2] = (size >> 16) & 0xFF;  
+    buffer[3] = (size >> 24) & 0xFF;  
+    buffer[4] = command;  
+    
+    printf("Sending command: 0x%02x with size=%u\n", command, size);  
+    printf("Raw bytes: %02x %02x %02x %02x %02x\n",   
+           buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+  
+    int bytes_sent = send(sock, (const char*)buffer, 5, 0);  
+    printf("Bytes sent: %d\n", bytes_sent);
+    
+    bool success = (bytes_sent == 5);
+    
+    // Try to read response
+    u8 response[512];
+    int bytes_recv = recv(sock, (char*)response, sizeof(response), 0);
+    if (bytes_recv > 0)
+    {
+        printf("Received response: %d bytes\n", bytes_recv);
+        if (bytes_recv >= 5)
+        {
+            printf("Response: %02x %02x %02x %02x %02x\n",   
+                   response[0], response[1], response[2], response[3], response[4]);
+        }
+    }
+    
+    closesocket(sock);  
+    WSACleanup();  
+#else  
+    int sock = socket(AF_UNIX, SOCK_STREAM, 0);  
+    if (sock < 0)  
+        return false;  
+  
+    std::string socket_name;  
+    char* runtime_dir = nullptr;  
+#ifdef __APPLE__  
+    runtime_dir = std::getenv("TMPDIR");  
+#else  
+    runtime_dir = std::getenv("XDG_RUNTIME_DIR");  
+#endif  
+    if (runtime_dir == nullptr)  
+        socket_name = "/tmp/pcsx2.sock";  
+    else  
+    {  
+        socket_name = runtime_dir;  
+        socket_name += "/pcsx2.sock";  
+    }  
+  
+    if (slot != PINE_DEFAULT_SLOT)  
+        socket_name += "." + std::to_string(slot);  
+  
+    struct sockaddr_un server;  
+    server.sun_family = AF_UNIX;  
+    strncpy(server.sun_path, socket_name.c_str(), sizeof(server.sun_path) - 1);  
+  
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0)  
+    {  
+        close(sock);  
+        return false;  
+    }  
+  
+    u8 buffer[5];
+    u32 size = 1;
+    buffer[0] = size & 0xFF;  
+    buffer[1] = (size >> 8) & 0xFF;  
+    buffer[2] = (size >> 16) & 0xFF;  
+    buffer[3] = (size >> 24) & 0xFF;  
+    buffer[4] = command;
+    
+    printf("Sending command: 0x%02x with size=%u\n", command, size);
+    
+    int bytes_sent = write(sock, buffer, 5);  
+    printf("Bytes sent: %d\n", bytes_sent);
+    
+    bool success = (bytes_sent == 5);
+    
+    u8 response[512];
+    int bytes_recv = read(sock, response, sizeof(response));
+    if (bytes_recv > 0)
+    {
+        printf("Received response: %d bytes\n", bytes_recv);
+        if (bytes_recv >= 5)
+        {
+            printf("Response: %02x %02x %02x %02x %02x\n",   
+                   response[0], response[1], response[2], response[3], response[4]);
+        }
+    }
+    
+    close(sock);  
+#endif  
+  
+    return success;  
 }
 
 bool QtHost::ParseCommandLineOptions(const QStringList& args, std::shared_ptr<VMBootParameters>& autoboot)
@@ -2262,6 +2409,23 @@ bool QtHost::ParseCommandLineOptions(const QStringList& args, std::shared_ptr<VM
 				AutoBoot(autoboot)->start_unlimited = true;
 				continue;
 			}
+			// else if (CHECK_ARG_PARAM("-changedisc"))
+			// {
+			// 	ChangeDisc(args[++i]);
+			// 	continue;
+			// }
+			else if (CHECK_ARG(QStringLiteral("-resetsys")))  
+			{  
+				// Try to send reset command to running PINE instance  
+				if (sendPINECommand(PINE_DEFAULT_SLOT, MsgReset))  
+				{  
+					std::printf("Reset command sent to running PCSX2 instance.\n");  
+					return false; // Exit after sending command, we want no UI in this case
+				}  
+				std::printf("No running PCSX2 instance found.\n");  
+				return false; // Exit, don't start new instance, we want to reset existing instance, no UI needed
+			}
+
 #ifdef ENABLE_RAINTEGRATION
 			else if (CHECK_ARG(QStringLiteral("-raintegration")))
 			{
