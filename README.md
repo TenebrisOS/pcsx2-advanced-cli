@@ -6,6 +6,9 @@ Added CLI Commands :
 - [ ] Change Running Disc `-changedisc <dir>` (dir or real disc)
 - [ ] Load Memory Card `-memory <dir>` (dir or usb? sd card? idk) 
 
+> [!WARNING]
+> The added CLI commands require PINE server activated on pcsx2. Activate advanced settings on pcsx2 to enable PINE.
+
 ![Windows Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/windows_build_matrix.yml?label=%F0%9F%96%A5%EF%B8%8F%20Windows%20Builds)
 ![Linux Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/linux_build_matrix.yml?label=%F0%9F%90%A7%20Linux%20Builds)
 ![MacOS Build Status](https://img.shields.io/github/actions/workflow/status/PCSX2/pcsx2/macos_build_matrix.yml?label=%F0%9F%8D%8E%20MacOS%20Builds)
